@@ -1,0 +1,158 @@
+<?php
+$theme_info = wp_get_theme();
+define('STM_THEME_VERSION', ( WP_DEBUG ) ? time() : $theme_info->get( 'Version' ) );
+
+$inc_path = get_template_directory() . '/inc';
+
+$widgets_path = get_template_directory() . '/inc/widgets';
+// Theme setups
+
+// Custom code and theme main setups
+require_once($inc_path . '/setup.php');
+
+// Enqueue scripts and styles for theme
+require_once($inc_path . '/scripts_styles.php');
+
+/*Theme configs*/
+require_once($inc_path . '/theme-config.php');
+
+// Visual composer custom modules
+if (defined('WPB_VC_VERSION')) {
+	require_once($inc_path . '/visual_composer.php');
+}
+
+// Custom code for any outputs modifying
+//require_once($inc_path . '/payment.php');
+require_once($inc_path . '/custom.php');
+
+// Custom code for woocommerce modifying
+if (class_exists('WooCommerce')) {
+	require_once($inc_path . '/woocommerce_setups.php');
+}
+
+if(defined('STM_LMS_URL')) {
+	require_once($inc_path . '/lms/main.php');
+}
+function stm_glob_pagenow(){
+    global $pagenow;
+    return $pagenow;
+}
+function stm_glob_wpdb(){
+    global $wpdb;
+    return $wpdb;
+}
+
+if(class_exists('BuddyPress')) {
+    require_once($inc_path . '/buddypress.php');
+}
+
+//Announcement banner
+if (is_admin()) {
+	require_once($inc_path . '/admin/generate_styles.php');
+	require_once($inc_path . '/admin/admin_helpers.php');
+	require_once($inc_path . '/admin/review/review-notice.php');
+	require_once($inc_path . '/admin/product_registration/admin.php');
+	require_once($inc_path . '/tgm/tgm-plugin-registration.php');
+}
+
+// Handle the parsing of the _ga cookie or setting it to a unique identifier
+function gaParseCookie($ga_cookie = NULL) {
+
+$cookie_ga = isset($_COOKIE['_ga']) ? $_COOKIE['_ga'] : $ga_cookie;
+
+  if (isset($cookie_ga)) {
+    list($version,$domainDepth, $cid1, $cid2) = explode('.', $cookie_ga);
+    $contents = array('version' => $version, 'domainDepth' => $domainDepth, 'cid' => $cid1.'.'.$cid2);
+    $cid = $contents['cid'];
+  }
+  else $cid = ''; 
+  return $cid;
+}
+
+add_filter( 'wpcf7_before_send_mail', 'wpcf7_before_send_mail_start_function' );
+function wpcf7_before_send_mail_start_function($cf7) {
+	$mail=$cf7->prop('mail');
+	if($mail){
+		// Отправка данных в CRM
+		$send_result = send_to_crm($cf7);
+		// По результату отправки данных 
+		if(isset($send_result['result'])){
+			// отправка прошла удачно и письмо отправляем на резервный e-mail
+			$mail['recipient'] = "резервный_e-mail_для_заявок_с_сайта";
+		} else {
+			// отправка прошла не удачно и надо отправить письмо на e-mail указанный в настройках CF7
+			$text = wpcf7_mail_replace_tags($mail['body']);
+			$text .= '<br><p>' . print_r($send_result, true) . '</p>';
+			$mail['body'] = $text;
+		}
+		$cf7->set_properties(array('mail'=>$mail));
+	}
+}
+
+function restCommand($method, array $params = array(), array $auth = array()) {
+    $queryUrl  = 'https://uchebnyytsentr1.bitrix24.ru/rest/1/vmsd8mr9yt0i1i2y/profile/' . $method;
+    $queryData = http_build_query($params);
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_POST           => 1,
+        CURLOPT_HEADER         => 0,
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL            => $queryUrl,
+        CURLOPT_POSTFIELDS     => $queryData,
+        )
+    );
+    $result = curl_exec($curl);
+    curl_close($curl);
+    $result = json_decode($result, 1);
+    return $result;
+}
+
+function send_to_crm($contact_form) {
+        $result = array();        
+        $submission = WPCF7_Submission :: get_instance() ;
+        if ($submission) {
+                $posted_data = $submission->get_posted_data() ;
+                $form_id = $posted_data['_wpcf7'];
+                $name = 'empty';
+                // заполняем поля в зависимости от id заполненной формы 
+                switch ($form_id) {
+                        case 112: // заявка с формы
+                                $subj = 'Заявка с формы ...';
+                                $mail = $posted_data['your-mail']; // данные о номере телефона из формы  
+                                $name = $posted_data['your-name']; // данные о ФИО из формы 
+                                break;
+                }
+                $mail = $contact_form->prop('mail');
+                $text = wpcf7_mail_replace_tags($mail['body']);
+                $phone_trim = trim(preg_replace("/[^0-9+]/", '', $phone));
+                $gauid = gaParseCookie();
+                $fields = array(
+                        'TITLE' => $subj .' от '. $name .' '. $phone, // название Лида название формы имя из формы и номер телефона
+                        'NAME' => $name,
+                        'SOURCE_ID' => '3', // строка ид для поля Источник
+                        'ASSIGNED_BY_ID' => 1, // id сотрудника ответственного за Лид в CRM
+                        'COMMENTS' => $text,
+                        'UF_CRM_1546540791' => $gauid, // пользовательское поле в Лиде для хранения clientID
+                        'UTM_SOURCE' => $posted_data['utm_source'],
+                        'UTM_MEDIUM' => $posted_data['utm_medium'],
+                        'UTM_CAMPAIGN' => $posted_data['utm_campaign'],
+                        'UTM_CONTENT' => $posted_data['utm_content'],
+                        'UTM_TERM' => $posted_data['utm_term'],
+                );
+                // проверка номера телефона на правильность ввода
+                if (preg_match("/^(?:8(?:(?:21|22|23|24|51|52|53|54|55)|(?:15\d\d))?|\+?7)?(?:(?:3[04589]|4[012789]|8[^89\D]|9\d)\d)?\d{7}$/", 
+                   $phone_trim)) {
+                        $fields['PHONE'][0] = array('VALUE' => $phone_trim, 'VALUE_TYPE' => 'WORK');
+                } else {
+                        $fields['COMMENTS'] = '<p>Номер телефона вероятно не правильный!</p><br>' . $text;
+                }
+                // Отправка Лида в CRM
+                $result = restCommand('crm.lead.add.json', 
+                array(
+                        'FIELDS' => $fields, 
+                        'PARAMS' => array('REGISTER_SONET_EVENT' => 'Y'),
+                )
+                );
+        }        
+        return $result;
+}

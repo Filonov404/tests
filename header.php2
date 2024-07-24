@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html <?php language_attributes(); ?> class="no-js">
+<head>
+    <?php do_action('masterstudy_head_start'); ?>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="profile" href="http://gmpg.org/xfn/11">
+    <link rel="pingback" href="<?php bloginfo('pingback_url'); ?>">
+    <?php wp_head(); ?>
+    <?php do_action('masterstudy_head_end'); ?>
+</head>
+<body <?php body_class(); ?> ontouchstart="">
+<?php wp_body_open(); ?>
+
+<?php do_action('masterstudy_body_start'); ?>
+
+<div id="wrapper">
+
+    <?php do_action('masterstudy_before_header'); ?>
+
+    <?php get_template_part('partials/headers/main'); ?>
+    <script>
+      
+    jQuery('div.pull-right:first').before('<div class="pull-right s8065 hidden-xs right_buttons"></div>');
+        jQuery('.s8065').append('<ul class="header-menu s9633 clearfix"><div class="magic_line" style="max-width: 160px;"></div></ul>');
+        jQuery('.s9633').append(jQuery('.header_main_menu_wrapper .pll-parent-menu-item'));
+        jQuery('.s9633 .menu-item-1941').css('margin-left', '20px');
+        jQuery('.s9633 .menu-item-1941').css('margin-right', '50px');
+		jQuery('.s9633 .menu-item-2356').css('margin-left', '20px');
+        jQuery('.s9633 .menu-item-2356').css('margin-right', '50px');
+        jQuery('.header_main_menu_wrapper .search-toggler').css('margin-left', '20px');
+        jQuery('.header_main_menu_wrapper .s8065 .header-menu > li > ul.sub-menu > li a').css('padding', '1px 2px 0px 28px');
+        jQuery('.header_main_menu_wrapper .s8065 .header-menu > li > ul.sub-menu').css('width','70px');
+        jQuery('.header_main_menu_wrapper .s8065 .header-menu > li > ul.sub-menu').css('left','30px');
+        jQuery('.menu-item-1565 .sub-menu').css('left','-15px');
+        jQuery('.header_main_menu_wrapper .s8065 .header-menu > li > ul.sub-menu').css('padding','10px 0px');
+        jQuery('.s8065').before('<div class="pull-right s8066 hidden-xs right_buttons"></div>');
+        jQuery('.s8066').append('<ul class="header-menu s9634 clearfix"><div class="magic_line" style="max-width: 160px;"></div></ul>');
+        jQuery('.s9634').append(jQuery('.header_main_menu_wrapper .menu-item-2023'));
+		 jQuery('.s9634').append(jQuery('.header_main_menu_wrapper .menu-item-2357'));
+		jQuery(window).ready(function() {
+			jQuery('.magic_line').removeClass('line_visible');
+		});
+		var href = window.location.href;
+		if(href.includes('/en/')) {
+			jQuery('.menu-item-2356-en').remove();
+		}
+		
+		
+        
+        
+        <?php if(is_user_logged_in()) { ?>
+		//ru
+        jQuery('.menu-item-1565').css('display', 'block');
+        jQuery('.menu-item-2023').css('display', 'none');
+		//en
+		 jQuery('.menu-item-1565').css('display', 'block');
+		 jQuery('.menu-item-2357').css('display', 'none');
+		//ru
+        jQuery('.menu-item-2023').css('display', 'none');
+		 jQuery('.menu-item-1565').css('display', 'block');
+       
+<?php } else { ?>
+		//ru
+        jQuery('.menu-item-1565').css('display', 'none');
+        jQuery('.menu-item-2023').css('display', 'block');
+		//en
+		 jQuery('.menu-item-2412').css('display', 'none');
+        jQuery('.menu-item-2357').css('display', 'block');
+		
+		//pt
+		 jQuery('.menu-item-1565').css('display', 'none');
+        jQuery('.menu-item-2023').css('display', 'block');
+		
+        
+<?php } ?>
+        
+       
+    </script>
+
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    <div id="main">
